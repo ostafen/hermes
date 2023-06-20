@@ -1,10 +1,10 @@
 package http
 
 import (
-	"encoding/json"
+	"io"
 	"net/http"
 
-	"github.com/go-playground/validator"
+	"github.com/gorilla/mux"
 	"github.com/ostafen/hermes/internal/service"
 )
 
@@ -19,50 +19,42 @@ func NewProjectionsController(svc service.ProjectionService) *ProjectionsControl
 }
 
 func (c *ProjectionsController) Create(w http.ResponseWriter, r *http.Request) {
-	var input service.CreateProjectionInput
+	vars := mux.Vars(r)
 
-	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&input); err != nil {
-		writeError(w, err, http.StatusInternalServerError)
-		return
-	}
-
-	v := validator.New()
-	if err := v.Struct(input); err != nil {
-		writeError(w, err, http.StatusBadRequest)
-		return
-	}
-
-	err := c.svc.Create(r.Context(), input)
+	query, err := io.ReadAll(r.Body)
 	if err != nil {
-		writeError(w, err, http.StatusInternalServerError)
+		writeError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-}
 
-func (c *ProjectionsController) Get(w http.ResponseWriter, r *http.Request) {
+	if len(query) == 0 {
+		writeError(w, "query must not be empty", http.StatusBadRequest)
+		return
+	}
 
+	err = c.svc.Create(r.Context(), service.CreateProjectionInput{
+		Name:  vars["name"],
+		Query: string(query),
+	})
+
+	if err != nil {
+		writeError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func (c *ProjectionsController) Delete(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
 
-}
-
-func writeJSON(w http.ResponseWriter, body any) {
-	w.Header().Add("content-type", "application/json")
-
-	data, err := json.Marshal(body)
+	err := c.svc.Delete(r.Context(), service.DeleteProjectionInput{
+		Name: vars["name"],
+	})
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	_, err = w.Write(data)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
 }
 
-func writeError(w http.ResponseWriter, err error, status int) {
-	http.Error(w, err.Error(), http.StatusInternalServerError)
+func writeError(w http.ResponseWriter, errMsg string, status int) {
+	http.Error(w, errMsg, http.StatusInternalServerError)
 }

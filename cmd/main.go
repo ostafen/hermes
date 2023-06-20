@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gorilla/mux"
 	httpapi "github.com/ostafen/hermes/internal/api/http"
@@ -12,6 +13,58 @@ import (
 	"github.com/ostafen/hermes/internal/service"
 	log "github.com/sirupsen/logrus"
 )
+
+var (
+	version   string
+	commit    string = "none"
+	buildTime string = time.Now().Format(time.UnixDate)
+)
+
+func getVersion() string {
+	if version == "" {
+		return pseudoVersion()
+	}
+	return version
+}
+
+func pseudoVersion() string {
+	return fmt.Sprintf("v0.0.0-%s-%s", time.Now().Format("20060102150405"), commit)
+}
+
+func printLogo() {
+	fmt.Println(" _")
+	fmt.Println("| |__   ___ _ __ _ __ ___   ___  ___")
+	fmt.Println("| '_ \\ / _ \\ '__| '_ ` _ \\ / _ \\/ __|")
+	fmt.Println("| | | |  __/ |  | | | | | |  __/\\__ \\")
+	fmt.Println("|_| |_|\\___|_|  |_| |_| |_|\\___||___/")
+
+	fmt.Printf("\nVersion: %s\n", getVersion())
+	fmt.Printf("Commit: %s\n", commit)
+	fmt.Printf("Build.Time: %s\n\n", buildTime)
+}
+
+func main() {
+	printLogo()
+
+	cfg, err := config.Read()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	setupLogging(cfg.Logging)
+
+	svc := service.NewProjectionService(makeProcessorConfig(cfg))
+	defer svc.Shutdown()
+
+	setupRouter(svc)
+
+	log.WithField("port", cfg.Server.Port).
+		Info("starting http server")
+
+	if err := http.ListenAndServe(fmt.Sprintf(":%d", cfg.Server.Port), nil); err != nil {
+		log.Fatal(err)
+	}
+}
 
 func makeProcessorConfig(cfg *config.Config) processor.Config {
 	procCfg := processor.DefaultConfig(cfg.Kafka.Brokers)
@@ -28,25 +81,6 @@ func makeProcessorConfig(cfg *config.Config) processor.Config {
 	}
 
 	return procCfg
-}
-
-func main() {
-	cfg, err := config.Read()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	setupLogging(cfg.Logging)
-
-	svc := service.NewProjectionService(makeProcessorConfig(cfg))
-	defer svc.Shutdown()
-
-	setupRouter(svc)
-
-	log.WithField("port", cfg.Server.Port).
-		Info("starting http server")
-
-	http.ListenAndServe(fmt.Sprintf(":%d", cfg.Server.Port), nil)
 }
 
 func setupLogging(config config.Log) {
@@ -86,8 +120,7 @@ func setupRouter(svc service.ProjectionService) {
 
 	controller := httpapi.NewProjectionsController(svc)
 
-	r.HandleFunc("/projections", controller.Create).Methods("POST")
-	r.HandleFunc("/projections/{id}", controller.Get).Methods("GET")
+	r.HandleFunc("/projections/{name}", controller.Create).Methods("POST")
 	r.HandleFunc("/projections/{id}", controller.Delete).Methods("DELETE")
 
 	http.Handle("/", r)
