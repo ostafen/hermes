@@ -66,7 +66,7 @@ curl -X POST localhost:9175/projections/my-projection -H 'Content-Type: text/jav
 
 # REST API
 
-- **POST** /projections/{} - Create a new projections
+- **POST** /projections/{name} - Create a new projections
 - **DELETE** /projections/{name} - Delete an existing projections
 
 ## Contact
@@ -77,4 +77,4 @@ Hermes source code is available under the **MIT** License.
 
 ## Contributing
 
-Hermes is actively developed. If you want to contribute to the project, please read the following [guidelines](README.md).
+Hermes is actively developed. If you want to contribute to the project, please read the following [contribution guidelines](CODE_OF_CONDUCT.md).
