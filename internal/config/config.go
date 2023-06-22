@@ -61,7 +61,7 @@ func Read() (*Config, error) {
 }
 
 func viperDefaults() {
-	viper.SetDefault("port", 9175)
+	viper.SetDefault("server.port", 9175)
 }
 
 func bindEnv(v any) error {
