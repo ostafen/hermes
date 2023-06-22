@@ -64,6 +64,27 @@ Assuming the projection is stored in a file named `projection.js`, you can use t
 curl -X POST localhost:9175/projections/my-projection -H 'Content-Type: text/javascript' --data-binary @projection.js
 ```
 
+## Supported Projections Operators
+
+### Selectors
+
+| Selector                    | Description                               |
+| --------------------------  | ----------------------------------------- |
+| `fromStream({streamId})`    | Selects events from the streamId stream.  |
+| `fromStreams()`             | Selects events from the streams supplied.	|
+
+
+### Filters and Transformations
+
+| Selector                       | Description                                                                                                                                           | Provides                                     |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| `when(handlers)`               | Allows only the given events of a particular to pass through the projection.                                                                          | transformBy, filterBy, outputTo, outputState |
+| `outputState()`                | If the projection is statefull, setting this option produces a stream called `projections-{projection-name}-result` with the state as the event body. | transformBy, filterBy, outputTo              |
+| `partitionBy(function(event))` | Partitions a projection by the partition returned from the handler.                                                                                   | transformBy, filterBy, outputTo              |
+| `transformBy(function(state))` | Provides the ability to transform the state of a projection by the provided handler.                                                                  | transformBy, filterBy, outputTo, outputState |
+| `filterBy(function(state))`    | Causes projection results to be `null` for any state that returns a `false` value from the given predicate.                                           | transformBy, filterBy, outputTo, outputState |
+
+
 # REST API
 
 - **POST** /projections/{name} - Create a new projections
