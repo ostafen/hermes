@@ -60,4 +60,4 @@ jobs:
           build-args: |
             BUILD_TIME=${{steps.vars.outputs.build_time}}
             COMMIT=${{steps.vars.outputs.commit}}
-            VERSION=${{steps.vars.outputs.VERSION}}
+            VERSION=${{steps.vars.outputs.version}}
