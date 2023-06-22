@@ -6,7 +6,7 @@ BUILD_TIME := $(shell date)
 COMMIT := $(shell git rev-parse HEAD)
 VERSION ?= latest
 
-IMG_NAME ?= ghcr.io/ostafen/kronos
+IMG_NAME ?= ghcr.io/ostafen/hermes
 IMG_TAG ?= latest
 
 build: vendor
