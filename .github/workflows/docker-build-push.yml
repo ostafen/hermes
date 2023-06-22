@@ -43,9 +43,13 @@ jobs:
         uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=semver,pattern='v(.*)$'
-            type=sha
+      
+      - name: Parse semver
+        id: semver_parser 
+        uses: booxmedialtd/ws-action-parse-semver@v1.4.7
+        with:
+          input_string: '${{ github.ref_name }}'
+          version_extractor_regex: 'v(.*)$'
 
       - name: Set build image envs
         id: vars
@@ -60,7 +64,10 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: |
+            ostafen/hermes:latest
+            ostafen/hermes:${{ github.ref_name }}
+            ostafen/hermes:v${{ steps.semver_parser.outputs.major }}.${{ steps.semver_parser.outputs.minor }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             BUILD_TIME=${{steps.vars.outputs.build_time}}
