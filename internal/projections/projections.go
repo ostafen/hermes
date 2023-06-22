@@ -118,8 +118,10 @@ func (w *when) getHandler(handlers map[string]gojaFunc, eventType string) gojaFu
 func (w *when) When(handlers map[string]gojaFunc) WhenRes {
 	w.p.Operations = append(w.p.Operations, func(state any, e Event) (any, bool) {
 		if state == nil {
-			initFunc := handlers[initFunc]
-			state = initFunc.Call(w.p.runtime)
+			initFunc, hasInit := handlers[initFunc]
+			if !hasInit {
+				state = initFunc.Call(w.p.runtime)
+			}
 		}
 
 		handlerFunc := w.getHandler(handlers, e.Type)
@@ -225,40 +227,31 @@ func (p *Projection) IsPartitioned() bool {
 	return p.partitionBy != nil
 }
 
-func (p *Projection) updateFunc(state any, e Event) (out any, forward bool, err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			e, isErr := r.(error)
-			if isErr {
-				err = e
-			}
-		}
-	}()
-
+func (p *Projection) updateFunc(state any, e Event) (any, bool) {
 	var currState = state
 	for _, op := range p.Operations {
 		state, forward := op(currState, e)
 		if !forward {
-			return state, false, err
+			return state, false
 		}
 		currState = state
 	}
-	return currState, true, err
+	return currState, true
 }
 
 func (p *Projection) State() any {
 	return p.currState
 }
 
-func (p *Projection) Update(state any, e Event) (any, error) {
+func (p *Projection) Update(state any, e Event) any {
 	p.mtx.Lock()
 	defer p.mtx.Unlock()
 
-	newState, forward, err := p.updateFunc(state, e)
+	newState, forward := p.updateFunc(state, e)
 	if forward {
-		return newState, err
+		return newState
 	}
-	return nil, err
+	return nil
 }
 
 func (p *Projection) options(opts Options) {

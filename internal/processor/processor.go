@@ -262,7 +262,19 @@ func (proc *Processor) buildIputProcessor(p *projections.Projection, streams []s
 			return
 		}
 
-		output, err := p.Update(currState, e)
+		output, err := func() (out any, err error) {
+			defer func() {
+				if r := recover(); r != nil {
+					e, isErr := r.(error)
+					if isErr {
+						err = e
+					}
+				}
+			}()
+
+			out = p.Update(currState, e)
+			return
+		}()
 		if err != nil {
 			log.Error(err)
 			return
