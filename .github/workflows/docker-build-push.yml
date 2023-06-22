@@ -11,8 +11,8 @@ name: Create and publish a Docker image
 
 on:
   push:
-    branches:
-      - 'releases/**'
+    tags:
+      - "v*.*.*"
 
 env:
   REGISTRY: ghcr.io
@@ -43,13 +43,14 @@ jobs:
         uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-      
-      - name: Parse semver
-        id: semver_parser 
-        uses: booxmedialtd/ws-action-parse-semver@v1.4.7
-        with:
-          input_string: '${{ github.ref_name }}'
-          version_extractor_regex: 'v(.*)$'
+          tags: |
+            type=schedule
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha
 
       - name: Set build image envs
         id: vars
@@ -64,10 +65,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: |
-            ostafen/hermes:latest
-            ostafen/hermes:${{ github.ref_name }}
-            ostafen/hermes:v${{ steps.semver_parser.outputs.major }}.${{ steps.semver_parser.outputs.minor }}
+          tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             BUILD_TIME=${{steps.vars.outputs.build_time}}
