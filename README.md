@@ -14,7 +14,7 @@ Run the following command
 foo@bar$ make build
 ```
 
-## Service configuration
+## Local service setup
 
 ```yaml
 logging:
@@ -34,6 +34,29 @@ To start the service, run the command:
 ```bash
 foo@bar$ ./bin/hermes config.yml
 ```
+
+## Docker-compose setup
+
+```yaml
+---
+version: '3'
+services:
+  zookeper:
+    ...
+  
+  kafka:
+    ...
+
+  hermes:
+    image: ghcr.io/ostafen/hermes:0.0.1-alpha
+    ports:
+      - '9175:9175'
+    environment:
+      SERVER_PORT: 9175
+      KAFKA_BROKERS: localhost:9092
+```
+
+You can find a ready to use docker compose file [here](docker-compose.yml).
 
 ## Projections
 
