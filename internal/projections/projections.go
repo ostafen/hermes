@@ -119,7 +119,7 @@ func (w *when) When(handlers map[string]gojaFunc) WhenRes {
 	w.p.Operations = append(w.p.Operations, func(state any, e Event) (any, bool) {
 		if state == nil {
 			initFunc, hasInit := handlers[initFunc]
-			if !hasInit {
+			if hasInit {
 				state = initFunc.Call(w.p.runtime)
 			}
 		}
